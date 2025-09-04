@@ -1,0 +1,54 @@
+#!/bin/sh
+
+PROFILE_FILE="/etc/temp_profile.conf"
+
+while true; do
+    temp=$(tr -cd '0-9' </sys/devices/virtual/mstar/msys/TEMP_R 2>/dev/null)
+    if [ -z "$temp" ]; then
+        sleep 5
+        continue
+    fi
+
+    base_fps=$(yaml-cli -g .video0.fps 2>/dev/null | cut -d. -f1)
+    if [ -z "$base_fps" ] || [ "$base_fps" -le 0 ]; then
+        sleep 5
+        continue
+    fi
+
+    fps=""
+    sleep_interval=5
+
+    while IFS= read -r line; do
+        # skip comments & empty lines
+        case "$line" in
+            \#*|"") continue ;;
+        esac
+
+        range=$(echo "$line" | awk '{print $1}')
+        fps_conf=$(echo "$line" | awk '{print $2}')
+        mult_conf=$(echo "$line" | awk '{print $3}')
+        update_conf=$(echo "$line" | awk '{print $4}')
+
+        min=$(echo "$range" | cut -d- -f1)
+        max=$(echo "$range" | cut -d- -f2 | sed 's/+//')
+
+        [ -z "$max" ] && max=9999
+
+        if [ "$temp" -ge "$min" ] && [ "$temp" -le "$max" ]; then
+            if [ "$fps_conf" != "-" ] && [ -n "$fps_conf" ]; then
+                fps=$fps_conf
+            elif [ "$mult_conf" != "-" ] && [ -n "$mult_conf" ]; then
+                fps=$(awk -v b="$base_fps" -v m="$mult_conf" 'BEGIN {printf("%d", b*m)}')
+            fi
+            [ -n "$update_conf" ] && [ "$update_conf" != "-" ] && sleep_interval=$update_conf
+            break
+        fi
+    done < "$PROFILE_FILE"
+
+    if [ -n "$fps" ]; then
+        echo "setfps 0 $fps" >/proc/mi_modules/mi_sensor/mi_sensor0 2>/dev/null
+        echo "Temperature: ${temp}°C | Base FPS: ${base_fps} | Set FPS: ${fps}"
+    fi
+
+    sleep "$sleep_interval"
+done
