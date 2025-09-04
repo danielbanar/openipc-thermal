@@ -52,7 +52,7 @@ This script is distributed as part of a custom package in the **OpenIPC firmware
 1. Clone and use my OpenIPC firmware repo that contains this package.  
 2. Enable the package in your `defconfig`:  
    ```
-   BR2_PACKAGE_THERMAL_DB=y
+   BR2_PACKAGE_THERMAL_THROTTLE_DB=y
    ```
 3. Build the firmware and flash it to your camera.  
 
