@@ -57,5 +57,3 @@ This script is distributed as part of a custom package in the **OpenIPC firmware
 3. Build the firmware and flash it to your camera.  
 
 The service will then be available inside the firmware.
-
----
