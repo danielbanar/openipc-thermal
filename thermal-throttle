@@ -1,6 +1,7 @@
 #!/bin/sh
 
 PROFILE_FILE="/etc/temp_profile.conf"
+last_fps=""
 
 while true; do
     temp=$(tr -cd '0-9' </sys/devices/virtual/mstar/msys/TEMP_R 2>/dev/null)
@@ -46,8 +47,13 @@ while true; do
     done < "$PROFILE_FILE"
 
     if [ -n "$fps" ]; then
-        echo "setfps 0 $fps" >/proc/mi_modules/mi_sensor/mi_sensor0 2>/dev/null
-        echo "Temperature: ${temp}°C | Base FPS: ${base_fps} | Set FPS: ${fps}"
+        if [ "$fps" != "$last_fps" ]; then
+            echo "setfps 0 $fps" >/proc/mi_modules/mi_sensor/mi_sensor0 2>/dev/null
+            echo "Temperature: ${temp}°C | Base FPS: ${base_fps} | Set FPS: ${fps} (updated)"
+            last_fps=$fps
+        else
+            echo "Temperature: ${temp}°C | Base FPS: ${base_fps} | FPS unchanged (${fps})"
+        fi
     fi
 
     sleep "$sleep_interval"
